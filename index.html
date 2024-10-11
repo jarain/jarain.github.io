@@ -38,7 +38,7 @@
             border: 1px solid #000000;
             cursor: grab;
             flex-grow: 1;
-            margin-top: 40px; /* 为了不让标签遮住Canvas内容 */
+            margin-top: 40px;
         }
         canvas:active {
             cursor: grabbing;
@@ -71,10 +71,30 @@
             transform: translate(-50%, -50%);
             font-size: 24px;
             color: #ff9800;
-            display: none; /* Initially hidden */
+            display: none;
         }
         @keyframes rotate {
             100% { transform: rotate(360deg); }
+        }
+        #loading-download {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: #ff9800;
+            display: none;
+            z-index: 200; /* 使其显示在最前面 */
+        }
+
+        .loading-icon {
+            border: 6px solid rgba(0, 0, 0, 0.1);
+            border-top: 6px solid #ff9800;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: rotate 1s linear infinite;
+            margin-bottom: 10px;
         }
         .loading-icon {
             border: 6px solid rgba(0, 0, 0, 0.1);
@@ -102,6 +122,27 @@
             background-color: #e68900;
         }
     </style>
+</head>
+<body>
+    <div id="tabs">
+        <div class="tab">康熙二十六年</div>
+        <div class="tab">光绪二十八年</div>
+        <div class="tab">民国二十年</div>
+    </div>
+    <canvas id="myCanvas"></canvas>
+    <div id="zoom-level">缩放比例: 100%</div>
+    <div id="tip">滚轮/双指缩放，左键/单指拖动</div>
+    <div id="loading">
+        <div class="loading-icon"></div>
+        <div>图片加载中...</div>
+    </div>
+    <button id="download-btn">下载图片</button>
+    <!-- 其他代码保持不变 -->
+    <div id="loading-download">
+        <div class="loading-icon"></div>
+        <div>图片生成中...</div>
+    </div>
+
     <script>
         window.onload = function () {
             var canvas = document.getElementById('myCanvas');
@@ -117,13 +158,13 @@
             ];
 
             var imageSources = [
-                'https://raw.githubusercontent.com/jarain/jarain.github.io/refs/heads/main/kx.jpg', // 替换为你的第一张图片路径
-                'https://raw.githubusercontent.com/jarain/jarain.github.io/refs/heads/main/gx.jpg', // 替换为你的第二张图片路径
-                'https://raw.githubusercontent.com/jarain/jarain.github.io/refs/heads/main/mg.jpg'  // 替换为你的第三张图片路径
+                'https://raw.githubusercontent.com/jarain/jarain.github.io/refs/heads/main/kx.jpg',
+                'https://raw.githubusercontent.com/jarain/jarain.github.io/refs/heads/main/gx.jpg',
+                'https://raw.githubusercontent.com/jarain/jarain.github.io/refs/heads/main/mg.jpg'
             ];
 
             var currentImageIndex = 0;
-            var scale = 0.1;
+            var scale = 0.7;
             var minScale = 0.1;
             var maxScale = 5;
             var canvasCenterX, canvasCenterY;
@@ -133,15 +174,16 @@
             var savedStates = [];
 
             var zoomLevelDisplay = document.getElementById('zoom-level');
+            var downloadLoading = document.getElementById('loading-download'); // 下载加载动画
 
-            // 初始化图片加载
             images.forEach((img, index) => {
+                img.crossOrigin = "anonymous"; // 加上跨域处理
                 img.src = imageSources[index];
                 img.onload = function () {
                     if (index === 0) {
                         initCanvas();
                     }
-                    loadingDiv.style.display = 'none';
+                    loadingDiv.style.display = 'none'; // 图片加载完成，隐藏加载动画
                 };
             });
 
@@ -186,18 +228,11 @@
                     centerY: canvasCenterY
                 };
 
-                loadingDiv.style.display = 'block';
-
                 currentImageIndex = index;
 
                 scale = savedStates[currentImageIndex].scale;
                 canvasCenterX = savedStates[currentImageIndex].centerX;
                 canvasCenterY = savedStates[currentImageIndex].centerY;
-
-                images[currentImageIndex].onload = function () {
-                    loadingDiv.style.display = 'none';
-                    drawImage();
-                };
 
                 drawImage();
             }
@@ -214,46 +249,80 @@
 
             tabs[0].classList.add('active');
 
-            canvas.addEventListener('wheel', function (e) {
-                e.preventDefault();
+            // 下载按钮的跨域问题
+            document.getElementById('download-btn').addEventListener('click', function () {
+                downloadLoading.style.display = 'block';
+                var img = images[currentImageIndex];
 
-                var rect = canvas.getBoundingClientRect();
-                var mouseX = e.clientX - rect.left;
-                var mouseY = e.clientY - rect.top;
+                var tempCanvas = document.createElement('canvas');
+                var tempCtx = tempCanvas.getContext('2d');
 
-                var imgX = (mouseX - canvasCenterX) / scale;
-                var imgY = (mouseY - canvasCenterY) / scale;
+                tempCanvas.width = img.width;
+                tempCanvas.height = img.height;
 
-                var scaleFactor = 1.1;
-                if (e.deltaY < 0 && scale < maxScale) {
-                    scale *= scaleFactor;
-                } else if (e.deltaY > 0 && scale > minScale) {
-                    scale /= scaleFactor;
+                tempCtx.drawImage(img, 0, 0);
+
+                // 添加水印
+                var watermarkText = "热爱正当时";
+                tempCtx.font = "bold " + (img.width * 0.12) + "px Arial";
+                tempCtx.textAlign = 'center';
+                tempCtx.textBaseline = 'middle';
+                tempCtx.globalAlpha = 0.15;
+                tempCtx.fillStyle = "white";
+                tempCtx.fillText(watermarkText, tempCanvas.width / 2, tempCanvas.height / 2);
+
+                // 添加下载日期
+                var Dtxt="下载日期："
+                tempCtx.globalAlpha = 1;
+                tempCtx.font = "bold " + (img.width * 0.02) + "px Arial";
+                tempCtx.textAlign = 'right';
+                tempCtx.textBaseline = 'bottom';
+                tempCtx.fillText(Dtxt+new Date().toLocaleDateString(), tempCanvas.width - 150, tempCanvas.height - 50);
+
+                // 下载图像
+                var link = document.createElement('a');
+                link.href = tempCanvas.toDataURL('image/jpeg', 0.7); // 改为 JPEG 格式，质量 0.7
+                link.download = 'map_ap.jpg';
+                link.click();
+                downloadLoading.style.display = 'none';
+
+            });
+
+            window.addEventListener('resize', initCanvas);
+
+            canvas.addEventListener('wheel', function (event) {
+                var delta = Math.sign(event.deltaY);
+                var zoomFactor = 1.1;
+
+                if (delta > 0) {
+                    scale /= zoomFactor;
+                } else {
+                    scale *= zoomFactor;
                 }
 
-                canvasCenterX = mouseX - imgX * scale;
-                canvasCenterY = mouseY - imgY * scale;
+                scale = Math.min(maxScale, Math.max(minScale, scale));
 
                 drawImage();
             });
 
-            canvas.addEventListener('mousedown', function (e) {
-                if (e.button === 0) {
-                    isDragging = true;
-                    dragStartX = e.clientX;
-                    dragStartY = e.clientY;
-                    canvas.style.cursor = 'grabbing';
-                }
+            canvas.addEventListener('mousedown', function (event) {
+                isDragging = true;
+                dragStartX = event.clientX;
+                dragStartY = event.clientY;
+                canvas.style.cursor = 'grabbing';
             });
 
-            canvas.addEventListener('mousemove', function (e) {
+            canvas.addEventListener('mousemove', function (event) {
                 if (isDragging) {
-                    var dx = e.clientX - dragStartX;
-                    var dy = e.clientY - dragStartY;
+                    var dx = event.clientX - dragStartX;
+                    var dy = event.clientY - dragStartY;
+
                     canvasCenterX += dx;
                     canvasCenterY += dy;
-                    dragStartX = e.clientX;
-                    dragStartY = e.clientY;
+
+                    dragStartX = event.clientX;
+                    dragStartY = event.clientY;
+
                     drawImage();
                 }
             });
@@ -263,121 +332,35 @@
                 canvas.style.cursor = 'grab';
             });
 
-            canvas.addEventListener('mouseleave', function () {
-                isDragging = false;
-                canvas.style.cursor = 'grab';
-            });
-
-            canvas.addEventListener('touchstart', function (e) {
-                if (e.touches.length === 2) {
-                    initialPinchDistance = getPinchDistance(e.touches);
-                } else if (e.touches.length === 1) {
-                    isDragging = true;
-                    dragStartX = e.touches[0].clientX;
-                    dragStartY = e.touches[0].clientY;
+            canvas.addEventListener('touchstart', function (event) {
+                if (event.touches.length === 2) {
+                    initialPinchDistance = getPinchDistance(event);
                 }
             });
 
-            canvas.addEventListener('touchmove', function (e) {
-                e.preventDefault();
-                if (e.touches.length === 2 && initialPinchDistance) {
-                    var currentPinchDistance = getPinchDistance(e.touches);
-                    var pinchRatio = currentPinchDistance / initialPinchDistance;
-                    if (pinchRatio > 1 && scale < maxScale) {
-                        scale *= pinchRatio;
-                    } else if (pinchRatio < 1 && scale > minScale) {
-                        scale /= pinchRatio;
+            canvas.addEventListener('touchmove', function (event) {
+                if (event.touches.length === 2) {
+                    var currentPinchDistance = getPinchDistance(event);
+                    if (initialPinchDistance !== null) {
+                        var pinchScale = currentPinchDistance / initialPinchDistance;
+                        scale *= pinchScale;
+                        scale = Math.min(maxScale, Math.max(minScale, scale));
+                        initialPinchDistance = currentPinchDistance;
+                        drawImage();
                     }
-                    initialPinchDistance = currentPinchDistance;
-                    drawImage();
-                } else if (e.touches.length === 1 && isDragging) {
-                    var dx = e.touches[0].clientX - dragStartX;
-                    var dy = e.touches[0].clientY - dragStartY;
-                    canvasCenterX += dx;
-                    canvasCenterY += dy;
-                    dragStartX = e.touches[0].clientX;
-                    dragStartY = e.touches[0].clientY;
-                    drawImage();
                 }
             });
 
             canvas.addEventListener('touchend', function () {
-                isDragging = false;
                 initialPinchDistance = null;
             });
 
-            function getPinchDistance(touches) {
-                var dx = touches[0].clientX - touches[1].clientX;
-                var dy = touches[0].clientY - touches[1].clientY;
+            function getPinchDistance(event) {
+                var dx = event.touches[0].clientX - event.touches[1].clientX;
+                var dy = event.touches[0].clientY - event.touches[1].clientY;
                 return Math.sqrt(dx * dx + dy * dy);
             }
-
-            // 禁用右键菜单
-            canvas.addEventListener('contextmenu', function (e) {
-                e.preventDefault();
-            });
-
-            // 下载图片并添加水印
-            document.getElementById('download-btn').addEventListener('click', function () {  
-                // 创建一个临时canvas  
-                var tempCanvas = document.createElement('canvas');  
-                var tempCtx = tempCanvas.getContext('2d');  
-                var img = images[currentImageIndex];  
-            
-                tempCanvas.width = img.width;  
-                tempCanvas.height = img.height;  
-            
-                // 绘制原始图片  
-                tempCtx.drawImage(img, 0, 0);  
-            
-                // 计算水印文字大小（图片宽度的80%）  
-                var watermarkFontSize = img.width * 0.8;  
-                // 确保字体大小不会太小（例如，至少为12px）  
-                watermarkFontSize = Math.max(watermarkFontSize, 12);  
-            
-                // 添加水印  
-                tempCtx.font = 'bold ' + watermarkFontSize + 'px Arial';  
-                tempCtx.textAlign = 'center';  
-                tempCtx.textBaseline = 'middle';  
-                tempCtx.globalAlpha = 0.5; // 设置透明度  
-                var watermarkText = '热爱正当时';  
-                tempCtx.fillStyle = '#FFFFFF';  
-                tempCtx.fillText(watermarkText, tempCanvas.width / 2, tempCanvas.height / 2);  
-            
-                // 计算日期文字大小（图片高度的10%）  
-                var dateFontSize = img.height * 0.1;  
-                // 确保字体大小不会太小（例如，至少为10px）  
-                dateFontSize = Math.max(dateFontSize, 10);  
-            
-                // 添加下载日期  
-                var dateText = new Date().toLocaleDateString();  
-                tempCtx.font = dateFontSize + 'px Arial';  
-                tempCtx.globalAlpha = 1; // 重置透明度  
-                // 定位日期文本，这里根据字体大小和视觉效果稍作调整  
-                tempCtx.fillText(dateText, tempCanvas.width - (dateFontSize * dateText.length / 2) - 20, tempCanvas.height - dateFontSize - 10);  
-            
-                // 创建下载链接  
-                var link = document.createElement('a');  
-                link.href = tempCanvas.toDataURL('image/png');  
-                link.download = 'image_with_watermark.png';  
-                link.click();  
-            });
         };
     </script>
-</head>
-<body>
-    <div id="tabs">
-        <div class="tab">康熙二十六年</div>
-        <div class="tab">光绪二十八年</div>
-        <div class="tab">民国二十年</div>
-    </div>
-    <canvas id="myCanvas"></canvas>
-    <div id="zoom-level">缩放比例: 100%</div>
-    <div id="tip">滚轮/双指缩放，左键/单指拖动</div>
-    <div id="loading">
-        <div class="loading-icon"></div>
-        <div>图片加载中...</div>
-    </div>
-    <button id="download-btn">下载图片</button>
 </body>
 </html>
