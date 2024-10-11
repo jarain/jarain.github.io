@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>AnpingMaps</title>
+    <title>Canvas Image Tabs with Watermark</title>
     <style>
         body {
             margin: 0;
@@ -318,38 +318,49 @@
             });
 
             // 下载图片并添加水印
-            document.getElementById('download-btn').addEventListener('click', function () {
-                // 创建一个临时canvas
-                var tempCanvas = document.createElement('canvas');
-                var tempCtx = tempCanvas.getContext('2d');
-                var img = images[currentImageIndex];
-
-                tempCanvas.width = img.width;
-                tempCanvas.height = img.height;
-
-                // 绘制原始图片
-                tempCtx.drawImage(img, 0, 0);
-
-                // 添加水印
-                tempCtx.font = 'bold 48px Arial';
-                tempCtx.textAlign = 'center';
-                tempCtx.textBaseline = 'middle';
-                tempCtx.globalAlpha = 0.5; // 设置透明度
-                var watermarkText = '热爱正当时';
-                tempCtx.fillStyle = '#ff9800';
-                tempCtx.fillText(watermarkText, tempCanvas.width / 2, tempCanvas.height / 2);
-
-                // 添加下载日期
-                var dateText = new Date().toLocaleDateString();
-                tempCtx.font = '24px Arial';
-                tempCtx.globalAlpha = 1; // 重置透明度
-                tempCtx.fillText(dateText, tempCanvas.width - 100, tempCanvas.height - 30);
-
-                // 创建下载链接
-                var link = document.createElement('a');
-                link.href = tempCanvas.toDataURL('image/png');
-                link.download = 'image_with_watermark.png';
-                link.click();
+            document.getElementById('download-btn').addEventListener('click', function () {  
+                // 创建一个临时canvas  
+                var tempCanvas = document.createElement('canvas');  
+                var tempCtx = tempCanvas.getContext('2d');  
+                var img = images[currentImageIndex];  
+            
+                tempCanvas.width = img.width;  
+                tempCanvas.height = img.height;  
+            
+                // 绘制原始图片  
+                tempCtx.drawImage(img, 0, 0);  
+            
+                // 计算水印文字大小（图片宽度的80%）  
+                var watermarkFontSize = img.width * 0.8;  
+                // 确保字体大小不会太小（例如，至少为12px）  
+                watermarkFontSize = Math.max(watermarkFontSize, 12);  
+            
+                // 添加水印  
+                tempCtx.font = 'bold ' + watermarkFontSize + 'px Arial';  
+                tempCtx.textAlign = 'center';  
+                tempCtx.textBaseline = 'middle';  
+                tempCtx.globalAlpha = 0.5; // 设置透明度  
+                var watermarkText = '热爱正当时';  
+                tempCtx.fillStyle = '#FFFFFF';  
+                tempCtx.fillText(watermarkText, tempCanvas.width / 2, tempCanvas.height / 2);  
+            
+                // 计算日期文字大小（图片高度的10%）  
+                var dateFontSize = img.height * 0.1;  
+                // 确保字体大小不会太小（例如，至少为10px）  
+                dateFontSize = Math.max(dateFontSize, 10);  
+            
+                // 添加下载日期  
+                var dateText = new Date().toLocaleDateString();  
+                tempCtx.font = dateFontSize + 'px Arial';  
+                tempCtx.globalAlpha = 1; // 重置透明度  
+                // 定位日期文本，这里根据字体大小和视觉效果稍作调整  
+                tempCtx.fillText(dateText, tempCanvas.width - (dateFontSize * dateText.length / 2) - 20, tempCanvas.height - dateFontSize - 10);  
+            
+                // 创建下载链接  
+                var link = document.createElement('a');  
+                link.href = tempCanvas.toDataURL('image/png');  
+                link.download = 'image_with_watermark.png';  
+                link.click();  
             });
         };
     </script>
