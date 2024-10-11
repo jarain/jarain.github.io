@@ -1,366 +1,313 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Canvas Image Tabs with Watermark</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AMAP</title>
     <style>
-        body {
+        body, html {
             margin: 0;
             padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            background-color: #f0f0f0;
+        }
+
+        .tab-container {
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
+            height: 100%;
         }
-        #tabs {
+
+        /* 美化Tab栏 */
+        .tabs {
             display: flex;
-            justify-content: center;
-            background-color: #333;
-            width: 100%;
+            background: linear-gradient(to right, #4b6cb7, #182848);
             position: fixed;
             top: 0;
-            z-index: 100;
-        }
-        .tab {
-            padding: 10px 20px;
-            cursor: pointer;
-            color: white;
-            background-color: #555;
-            margin: 0 5px;
-            font-size: 16px;
-        }
-        .tab.active {
-            background-color: #ff9800;
-        }
-        canvas {
-            border: 1px solid #000000;
-            cursor: grab;
-            flex-grow: 1;
-            margin-top: 40px;
-        }
-        canvas:active {
-            cursor: grabbing;
-        }
-        #zoom-level {
-            position: fixed;
-            right: 10px;
-            bottom: 10px;
-            background-color: rgba(0, 0, 0, 0.5);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-        #tip {
-            position: fixed;
-            left: 10px;
-            bottom: 10px;
-            background-color: rgba(255, 165, 0, 0.8);
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 14px;
-            z-index: 100;
-        }
-        #loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 24px;
-            color: #ff9800;
-            display: none;
-        }
-        @keyframes rotate {
-            100% { transform: rotate(360deg); }
-        }
-        #loading-download {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 24px;
-            color: #ff9800;
-            display: none;
-            z-index: 200; /* 使其显示在最前面 */
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
-        .loading-icon {
-            border: 6px solid rgba(0, 0, 0, 0.1);
-            border-top: 6px solid #ff9800;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: rotate 1s linear infinite;
-            margin-bottom: 10px;
+        .tabs button {
+            flex: 1;
+            padding: 15px;
+            background-color: transparent;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background 0.3s ease;
         }
-        .loading-icon {
-            border: 6px solid rgba(0, 0, 0, 0.1);
-            border-top: 6px solid #ff9800;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: rotate 1s linear infinite;
-            margin-bottom: 10px;
+
+        .tabs button.active {
+            background-color: rgba(255, 255, 255, 0.2);
+            font-weight: bold;
         }
+
+        .tabs button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .content {
+            flex: 1;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: absolute;
+            width: 100%;
+            height: calc(100% - 60px);
+            top: 60px;
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0s, opacity 0.5s ease;
+        }
+
+        .content.active {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .pinch-zoom {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .pinch-zoom img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            touch-action: none;
+        }
+
+        /* 美化下载按钮 */
         #download-btn {
             position: fixed;
+            right: 20px;
             bottom: 20px;
-            padding: 10px 20px;
-            background-color: #ff9800;
+            padding: 12px 24px;
+            background: linear-gradient(to right, #4b6cb7, #182848);
             color: white;
-            font-size: 16px;
-            cursor: pointer;
             border: none;
-            border-radius: 5px;
-            outline: none;
-            z-index: 100;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, background 0.3s ease;
         }
+
         #download-btn:hover {
-            background-color: #e68900;
+            background: linear-gradient(to right, #6a85b6, #243b55);
+            transform: scale(1.05);
+        }
+
+        /* 美化loading动画 */
+        #downloadLoading {
+            visibility: hidden; /* 隐藏时用 visibility 和 opacity */
+            opacity: 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            font-size: 24px;
+            letter-spacing: 2px;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        #downloadLoading.active {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.2);
+            border-top: 5px solid #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 20px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/pinch-zoom-js@2.3.5/dist/pinch-zoom.umd.js"></script>
+
 </head>
 <body>
-    <div id="tabs">
-        <div class="tab">康熙二十六年</div>
-        <div class="tab">光绪二十八年</div>
-        <div class="tab">民国二十年</div>
-    </div>
-    <canvas id="myCanvas"></canvas>
-    <div id="zoom-level">缩放比例: 100%</div>
-    <div id="tip">滚轮/双指缩放，左键/单指拖动</div>
-    <div id="loading">
-        <div class="loading-icon"></div>
-        <div>图片加载中...</div>
-    </div>
-    <button id="download-btn">下载图片</button>
-    <!-- 其他代码保持不变 -->
-    <div id="loading-download">
-        <div class="loading-icon"></div>
-        <div>图片生成中...</div>
+
+<div class="tab-container">
+    <div class="tabs">
+        <button class="tablinks" onclick="openTab(event, 'kx')">康熙二十六年</button>
+        <button class="tablinks" onclick="openTab(event, 'gx')">光绪二十八年(重绘版)</button>
+        <button class="tablinks" onclick="openTab(event, 'mg')">民国二十年</button>
     </div>
 
-    <script>
-        window.onload = function () {
-            var canvas = document.getElementById('myCanvas');
-            var ctx = canvas.getContext('2d');
+    <div id="kx" class="content">
+        <div class="pinch-zoom">
+            <img id="image1" src="https://jarain.github.io/kx.jpg" alt="Image 1" crossorigin="anonymous" oncontextmenu="return false;" draggable="false">
+        </div>
+    </div>
 
-            var tabs = document.getElementsByClassName('tab');
-            var loadingDiv = document.getElementById('loading'); // Loading animation
+    <div id="gx" class="content">
+        <div class="pinch-zoom">
+            <img id="image2" src="https://jarain.github.io/gx.jpg" alt="Image 2" crossorigin="anonymous" oncontextmenu="return false;" draggable="false">
+        </div>
+    </div>
 
-            var images = [
-                new Image(),
-                new Image(),
-                new Image()
-            ];
+    <div id="mg" class="content">
+        <div class="pinch-zoom">
+            <img id="image3" src="https://jarain.github.io/mg.jpg" alt="Image 3" crossorigin="anonymous" oncontextmenu="return false;" draggable="false">
+        </div>
+    </div>
+</div>
 
-            var imageSources = [
-                'https://jarain.github.io/kx.jpg',
-                'https://jarain.github.io/gx.jpg',
-                'https://jarain.github.io/mg.jpg'
-            ];
+<!-- 下载按钮 -->
+<button id="download-btn">下载图片</button>
 
-            var currentImageIndex = 0;
-            var scale = 0.7;
-            var minScale = 0.1;
-            var maxScale = 5;
-            var canvasCenterX, canvasCenterY;
-            var isDragging = false;
-            var dragStartX, dragStartY;
-            var initialPinchDistance = null;
-            var savedStates = [];
+<!-- 全屏loading动画 -->
+<div id="downloadLoading">
+    <div class="spinner"></div>
+    正在处理中，请稍候...
+</div>
 
-            var zoomLevelDisplay = document.getElementById('zoom-level');
-            var downloadLoading = document.getElementById('loading-download'); // 下载加载动画
+<script>
+    let currentImageId = 'image1'; // 默认选中的图片 ID
 
-            images.forEach((img, index) => {
-                img.crossOrigin = "anonymous"; // 加上跨域处理
-                img.src = imageSources[index];
-                img.onload = function () {
-                    if (index === 0) {
-                        initCanvas();
-                    }
-                    loadingDiv.style.display = 'none'; // 图片加载完成，隐藏加载动画
-                };
+    // 禁止长按保存图片
+    document.addEventListener('touchstart', function(e) {
+        if (e.target.tagName === 'IMG') {
+            e.preventDefault(); // 禁用长按事件
+        }
+    }, { passive: false });
+
+    // Tab 切换功能
+    function openTab(evt, tabName) {
+        const contents = document.getElementsByClassName('content');
+        const tabs = document.getElementsByClassName('tablinks');
+
+        for (let i = 0; i < contents.length; i++) {
+            contents[i].classList.remove('active');
+        }
+
+        for (let i = 0; i < tabs.length; i++) {
+            tabs[i].classList.remove('active');
+        }
+
+        document.getElementById(tabName).classList.add('active');
+        evt.currentTarget.classList.add('active');
+
+        // 更新当前选中的图片ID
+        currentImageId = tabName === 'kx' ? 'image1' : tabName === 'gx' ? 'image2' : 'image3';
+
+        // Reinitialize PinchZoom for the active content
+        initPinchZoom(`#${tabName} .pinch-zoom`);
+    }
+
+    // Initialize PinchZoom.js
+    function initPinchZoom(selector) {
+        const element = document.querySelector(selector);
+        if (!element.pinchZoomInstance) {
+            element.pinchZoomInstance = new PinchZoom.default(element, {
+                useMouseWheel: true,
+                tapZoomFactor: 4,
+                animationDuration: 300,
+                maxZoom: 10,
+                minZoom: 1,
+                draggableUnzoomed: false,
+                lockDragAxis: false,
             });
 
-            loadingDiv.style.display = 'block'; // 显示加载动画
+            
+        }
+    }
 
-            function initCanvas() {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight - 40; // 去掉顶部标签的高度
+    // 页面加载时显示第一个 tab
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelector('.tablinks').click();
+    });
 
-                canvasCenterX = canvas.width / 2;
-                canvasCenterY = canvas.height / 2;
+    var downloadLoading = document.getElementById('downloadLoading');
 
-                for (let i = 0; i < tabs.length; i++) {
-                    savedStates[i] = {
-                        scale: 0.1,
-                        centerX: canvas.width / 2,
-                        centerY: canvas.height / 2
-                    };
-                }
+    // 显示 loading 动画
+    function showLoading() {
+        downloadLoading.classList.add('active'); // 使用 class 切换来显示
+    }
 
-                drawImage();
-            }
+    // 隐藏 loading 动画
+    function hideLoading() {
+        downloadLoading.classList.remove('active'); // 使用 class 切换来隐藏
+    }
 
-            function drawImage() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // 下载图片时添加水印
+    document.getElementById('download-btn').addEventListener('click', function () {
+        showLoading(); // 显示加载提示
+        var img = document.getElementById(currentImageId); // 获取当前选中的图片
 
-                ctx.save();
-                ctx.translate(canvasCenterX, canvasCenterY);
-                ctx.scale(scale, scale);
-                var img = images[currentImageIndex];
-                ctx.translate(-img.width / 2, -img.height / 2);
-                ctx.drawImage(img, 0, 0);
-                ctx.restore();
+        // 创建临时画布
+        var tempCanvas = document.createElement('canvas');
+        var tempCtx = tempCanvas.getContext('2d');
 
-                zoomLevelDisplay.innerHTML = '缩放比例: ' + Math.round(scale * 100) + '%';
-            }
+        tempCanvas.width = img.naturalWidth;
+        tempCanvas.height = img.naturalHeight;
 
-            function switchImage(index) {
-                savedStates[currentImageIndex] = {
-                    scale: scale,
-                    centerX: canvasCenterX,
-                    centerY: canvasCenterY
-                };
+        // 在画布上绘制图片
+        tempCtx.drawImage(img, 0, 0);
 
-                currentImageIndex = index;
+        // 添加水印
+        var watermarkText = "热爱正当时";
+        tempCtx.font = "bold " + (tempCanvas.width * 0.12) + "px Arial";
+        tempCtx.textAlign = 'center';
+        tempCtx.textBaseline = 'middle';
+        tempCtx.globalAlpha = 0.15;
+        tempCtx.fillStyle = "white";
+        tempCtx.fillText(watermarkText, tempCanvas.width / 2, tempCanvas.height / 2);
 
-                scale = savedStates[currentImageIndex].scale;
-                canvasCenterX = savedStates[currentImageIndex].centerX;
-                canvasCenterY = savedStates[currentImageIndex].centerY;
+         // 添加次级水印文字 "私人收藏 请勿商用"
+        var secondaryText = "私人收藏 请勿商用";
+        tempCtx.font = "bold " + (tempCanvas.width * 0.04) + "px Arial"; // 字体大小为前者的 50%
+        tempCtx.fillText(secondaryText, tempCanvas.width / 2, (tempCanvas.height / 2) + (tempCanvas.width * 0.12)); // 水平居中，垂直位置位于主文字下方
 
-                drawImage();
-            }
+        // 添加下载日期
+        var Dtxt = "下载日期：" + new Date().toLocaleDateString();
+        tempCtx.globalAlpha = 1;
+        tempCtx.font = "bold " + (tempCanvas.width * 0.02) + "px Arial";
+        tempCtx.textAlign = 'right';
+        tempCtx.textBaseline = 'bottom';
+        tempCtx.fillText(Dtxt, tempCanvas.width - 150, tempCanvas.height - 50);
 
-            for (let i = 0; i < tabs.length; i++) {
-                tabs[i].addEventListener('click', function () {
-                    for (let j = 0; j < tabs.length; j++) {
-                        tabs[j].classList.remove('active');
-                    }
-                    this.classList.add('active');
-                    switchImage(i);
-                });
-            }
+        // 创建下载链接
+        var link = document.createElement('a');
+        link.href = tempCanvas.toDataURL('image/jpeg', 0.7); // 生成 JPEG 图片
+        link.download = 'downloaded_image.jpg'; // 下载文件名
+        link.click(); // 触发下载
 
-            tabs[0].classList.add('active');
+        // 模拟处理时间，稍后隐藏 loading 提示
+        setTimeout(() => {
+            hideLoading(); // 隐藏加载提示
+        }, 1000); // 1 秒后隐藏
+    });
+</script>
 
-            // 下载按钮的跨域问题
-            document.getElementById('download-btn').addEventListener('click', function () {
-                downloadLoading.style.display = 'block';
-                var img = images[currentImageIndex];
-
-                var tempCanvas = document.createElement('canvas');
-                var tempCtx = tempCanvas.getContext('2d');
-
-                tempCanvas.width = img.width;
-                tempCanvas.height = img.height;
-
-                tempCtx.drawImage(img, 0, 0);
-
-                // 添加水印
-                var watermarkText = "热爱正当时";
-                tempCtx.font = "bold " + (img.width * 0.12) + "px Arial";
-                tempCtx.textAlign = 'center';
-                tempCtx.textBaseline = 'middle';
-                tempCtx.globalAlpha = 0.15;
-                tempCtx.fillStyle = "white";
-                tempCtx.fillText(watermarkText, tempCanvas.width / 2, tempCanvas.height / 2);
-
-                // 添加下载日期
-                var Dtxt="下载日期："
-                tempCtx.globalAlpha = 1;
-                tempCtx.font = "bold " + (img.width * 0.02) + "px Arial";
-                tempCtx.textAlign = 'right';
-                tempCtx.textBaseline = 'bottom';
-                tempCtx.fillText(Dtxt+new Date().toLocaleDateString(), tempCanvas.width - 150, tempCanvas.height - 50);
-
-                // 下载图像
-                var link = document.createElement('a');
-                link.href = tempCanvas.toDataURL('image/jpeg', 0.7); // 改为 JPEG 格式，质量 0.7
-                link.download = 'map_ap.jpg';
-                link.click();
-                downloadLoading.style.display = 'none';
-
-            });
-
-            window.addEventListener('resize', initCanvas);
-
-            canvas.addEventListener('wheel', function (event) {
-                var delta = Math.sign(event.deltaY);
-                var zoomFactor = 1.1;
-
-                if (delta > 0) {
-                    scale /= zoomFactor;
-                } else {
-                    scale *= zoomFactor;
-                }
-
-                scale = Math.min(maxScale, Math.max(minScale, scale));
-
-                drawImage();
-            });
-
-            canvas.addEventListener('mousedown', function (event) {
-                isDragging = true;
-                dragStartX = event.clientX;
-                dragStartY = event.clientY;
-                canvas.style.cursor = 'grabbing';
-            });
-
-            canvas.addEventListener('mousemove', function (event) {
-                if (isDragging) {
-                    var dx = event.clientX - dragStartX;
-                    var dy = event.clientY - dragStartY;
-
-                    canvasCenterX += dx;
-                    canvasCenterY += dy;
-
-                    dragStartX = event.clientX;
-                    dragStartY = event.clientY;
-
-                    drawImage();
-                }
-            });
-
-            canvas.addEventListener('mouseup', function () {
-                isDragging = false;
-                canvas.style.cursor = 'grab';
-            });
-
-            canvas.addEventListener('touchstart', function (event) {
-                if (event.touches.length === 2) {
-                    initialPinchDistance = getPinchDistance(event);
-                }
-            });
-
-            canvas.addEventListener('touchmove', function (event) {
-                if (event.touches.length === 2) {
-                    var currentPinchDistance = getPinchDistance(event);
-                    if (initialPinchDistance !== null) {
-                        var pinchScale = currentPinchDistance / initialPinchDistance;
-                        scale *= pinchScale;
-                        scale = Math.min(maxScale, Math.max(minScale, scale));
-                        initialPinchDistance = currentPinchDistance;
-                        drawImage();
-                    }
-                }
-            });
-
-            canvas.addEventListener('touchend', function () {
-                initialPinchDistance = null;
-            });
-
-            function getPinchDistance(event) {
-                var dx = event.touches[0].clientX - event.touches[1].clientX;
-                var dy = event.touches[0].clientY - event.touches[1].clientY;
-                return Math.sqrt(dx * dx + dy * dy);
-            }
-        };
-    </script>
 </body>
 </html>
