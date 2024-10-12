@@ -20,7 +20,6 @@
             height: 100%;
         }
 
-        /* 美化Tab栏 */
         .tabs {
             display: flex;
             background: linear-gradient(to right, #df3619, #b57706);
@@ -38,7 +37,7 @@
             color: white;
             border: none;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 14px;
             transition: background 0.3s ease;
         }
 
@@ -97,7 +96,7 @@
             border: none;
             border-radius: 30px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 14px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
             transition: transform 0.3s ease, background 0.3s ease;
         }
@@ -107,9 +106,9 @@
             transform: scale(1.05);
         }
 
-        /* 美化loading动画 */
-        #downloadLoading {
-            visibility: hidden; /* 隐藏时用 visibility 和 opacity */
+        /* 图片加载动画 */
+        #imageLoading {
+            visibility: hidden;
             opacity: 0;
             position: fixed;
             top: 0;
@@ -127,7 +126,7 @@
             transition: opacity 0.5s ease, visibility 0.5s ease;
         }
 
-        #downloadLoading.active {
+        #imageLoading.active {
             visibility: visible;
             opacity: 1;
         }
@@ -152,53 +151,68 @@
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/pinch-zoom-js@2.3.5/dist/pinch-zoom.umd.js"></script>
-
 </head>
 <body>
 
 <div class="tab-container">
-    <div class="tabs">
-        <button class="tablinks" onclick="openTab(event, 'kx')">康熙二十六年</button>
-        <button class="tablinks" onclick="openTab(event, 'gx')">光绪二十八年(重绘版)</button>
-        <button class="tablinks" onclick="openTab(event, 'mg')">民国二十年</button>
-    </div>
-    <div id="kx" class="content">
-        <div class="pinch-zoom">
-            <img id="image1" src="https://jarain.github.io/kx.jpg" alt="Image 1" crossorigin="anonymous" oncontextmenu="return false;" draggable="false">
-        </div>
-    </div>
-
-    <div id="gx" class="content">
-        <div class="pinch-zoom">
-            <img id="image2" src="https://jarain.github.io/gx.jpg" alt="Image 2" crossorigin="anonymous" oncontextmenu="return false;" draggable="false">
-        </div>
-    </div>
-
-    <div id="mg" class="content">
-        <div class="pinch-zoom">
-            <img id="image3" src="https://jarain.github.io/mg.jpg" alt="Image 3" crossorigin="anonymous" oncontextmenu="return false;" draggable="false">
-        </div>
-    </div>
+    <div class="tabs" id="tabs"></div>
+    <div id="contents"></div>
 </div>
 
 <!-- 下载按钮 -->
 <button id="download-btn">下载图片</button>
 
-<!-- 全屏loading动画 -->
-<div id="downloadLoading">
+<!-- 图片加载动画 -->
+<div id="imageLoading">
     <div class="spinner"></div>
-    正在处理中，请稍候...
+    加载中，请稍候...
 </div>
 
 <script>
-    let currentImageId = 'image1'; // 默认选中的图片 ID
+    const images = [
+        { name: "康熙二十六年(安平县志)", src: "https://jarain.github.io/kx.jpg", id: "kx" },
+        { name: "光绪二十八年(重绘版)", src: "https://jarain.github.io/gx.jpg", id: "gx" },
+        { name: "民国二十年", src: "https://jarain.github.io/mg.jpg", id: "mg" },
+        { name: "光绪二十八年(原版)", src: "https://jarain.github.io/gx_ori.jpg", id: "gx_ori" }
+    ];
 
-    // 禁止长按保存
-    document.addEventListener('touchstart', function(e) {
-        if (e.target.tagName === 'IMG') {
-            e.preventDefault(); // 禁用长按事件
+    const tabsContainer = document.getElementById('tabs');
+    const contentsContainer = document.getElementById('contents');
+    let currentImageId = images[0].id; // 默认选中的图片 ID
+    var imageLoading = document.getElementById('imageLoading'); // 获取加载动画容器
+
+    // 动态生成tabs和内容
+    images.forEach((image, index) => {
+        // 创建tab按钮
+        const tabButton = document.createElement('button');
+        tabButton.className = 'tablinks';
+        tabButton.textContent = image.name;
+        tabButton.onclick = (event) => openTab(event, image.id);
+        if (index === 0) {
+            tabButton.classList.add('active');
         }
-    }, { passive: false });
+        tabsContainer.appendChild(tabButton);
+
+        // 创建图片容器
+        const contentDiv = document.createElement('div');
+        contentDiv.id = image.id;
+        contentDiv.className = 'content' + (index === 0 ? ' active' : '');
+
+        const pinchZoomDiv = document.createElement('div');
+        pinchZoomDiv.className = 'pinch-zoom';
+
+        const img = document.createElement('img');
+        img.id = `image${index + 1}`;
+        img.src = image.src;
+        img.alt = `Image ${index + 1}`;
+        img.crossOrigin = 'anonymous';
+        img.draggable = 'false';
+        img.oncontextmenu = () => false;
+
+        pinchZoomDiv.appendChild(img);
+        contentDiv.appendChild(pinchZoomDiv);
+        contentsContainer.appendChild(contentDiv);
+    });
 
     // Tab 切换功能
     function openTab(evt, tabName) {
@@ -217,7 +231,24 @@
         evt.currentTarget.classList.add('active');
 
         // 更新当前选中的图片ID
-        currentImageId = tabName === 'kx' ? 'image1' : tabName === 'gx' ? 'image2' : 'image3';
+        currentImageId = tabName;
+
+        // 显示图片加载动画
+        showImageLoading();
+
+        // 检查图片是否已经加载完成
+        var img = document.getElementById(`image${Array.from(contents).findIndex(c => c.id === tabName) + 1}`);
+        if (img.complete) {
+            hideImageLoading(); // 如果图片已被缓存，立即隐藏加载动画
+        } else {
+            img.onload = function() {
+                hideImageLoading(); // 当图片加载完成时隐藏加载动画
+            };
+            img.onerror = function() {
+                hideImageLoading(); // 如果图片加载失败，也隐藏加载动画
+                alert('图片加载失败，请重试');
+            };
+        }
 
         // Reinitialize PinchZoom for the active content
         initPinchZoom(`#${tabName} .pinch-zoom`);
@@ -235,78 +266,33 @@
                 draggableUnzoomed: false,
                 lockDragAxis: false,
             });
-
-            
         }
     }
 
-    
-    // 页面加载时显示第一个 tab
-    document.addEventListener('DOMContentLoaded', function () {
-        document.querySelector('.tablinks').click();
-    });
-
-    var downloadLoading = document.getElementById('downloadLoading');
-
-    // 显示 loading 动画
-    function showLoading() {
-        downloadLoading.classList.add('active'); // 使用 class 切换来显示
+    // 显示图片加载动画
+    function showImageLoading() {
+        imageLoading.classList.add('active');
     }
 
-    // 隐藏 loading 动画
-    function hideLoading() {
-        downloadLoading.classList.remove('active'); // 使用 class 切换来隐藏
+    // 隐藏图片加载动画
+    function hideImageLoading() {
+        imageLoading.classList.remove('active');
     }
 
-    // 下载图片时添加水印
-    document.getElementById('download-btn').addEventListener('click', function () {
-        showLoading(); // 显示加载提示
-        var img = document.getElementById(currentImageId); // 获取当前选中的图片
+    // 下载当前选中图片
+    const downloadBtn = document.getElementById('download-btn');
+    downloadBtn.addEventListener('click', () => {
+        const activeImage = document.querySelector(`#${currentImageId} img`);
+        const imageUrl = activeImage.src;
 
-        // 创建临时画布
-        var tempCanvas = document.createElement('canvas');
-        var tempCtx = tempCanvas.getContext('2d');
-
-        tempCanvas.width = img.naturalWidth;
-        tempCanvas.height = img.naturalHeight;
-
-        // 在画布上绘制图片
-        tempCtx.drawImage(img, 0, 0);
-
-        // 添加水印
-        var watermarkText = "热爱正当时";
-        tempCtx.font = "bold " + (tempCanvas.width * 0.12) + "px Arial";
-        tempCtx.textAlign = 'center';
-        tempCtx.textBaseline = 'middle';
-        tempCtx.globalAlpha = 0.15;
-        tempCtx.fillStyle = "white";
-        tempCtx.fillText(watermarkText, tempCanvas.width / 2, tempCanvas.height / 2);
-
-         // 添加次级水印文字 "私人收藏 请勿商用"
-        var secondaryText = "私人收藏 请勿商用";
-        tempCtx.font = "bold " + (tempCanvas.width * 0.04) + "px Arial"; // 字体大小为前者的 50%
-        tempCtx.fillText(secondaryText, tempCanvas.width / 2, (tempCanvas.height / 2) + (tempCanvas.width * 0.12)); // 水平居中，垂直位置位于主文字下方
-
-        // 添加下载日期
-        var Dtxt = "下载日期：" + new Date().toLocaleDateString();
-        tempCtx.globalAlpha = 1;
-        tempCtx.font = "bold " + (tempCanvas.width * 0.02) + "px Arial";
-        tempCtx.textAlign = 'right';
-        tempCtx.textBaseline = 'bottom';
-        tempCtx.fillText(Dtxt, tempCanvas.width - 150, tempCanvas.height - 50);
-
-        // 创建下载链接
-        var link = document.createElement('a');
-        link.href = tempCanvas.toDataURL('image/jpeg', 0.7); // 生成 JPEG 图片
-        link.download = 'downloaded_image.jpg'; // 下载文件名
-        link.click(); // 触发下载
-
-        // 模拟处理时间，稍后隐藏 loading 提示
-        setTimeout(() => {
-            hideLoading(); // 隐藏加载提示
-        }, 1000); // 1 秒后隐藏
+        const link = document.createElement('a');
+        link.href = imageUrl;
+        link.download = `image_${currentImageId}.jpg`;
+        link.click();
     });
+
+    // 初始化 PinchZoom.js
+    initPinchZoom(`#${currentImageId} .pinch-zoom`);
 </script>
-
 </body>
 </html>
