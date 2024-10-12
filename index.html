@@ -162,7 +162,6 @@
         <button class="tablinks" onclick="openTab(event, 'gx')">光绪二十八年(重绘版)</button>
         <button class="tablinks" onclick="openTab(event, 'mg')">民国二十年</button>
     </div>
-
     <div id="kx" class="content">
         <div class="pinch-zoom">
             <img id="image1" src="https://jarain.github.io/kx.jpg" alt="Image 1" crossorigin="anonymous" oncontextmenu="return false;" draggable="false">
@@ -194,7 +193,7 @@
 <script>
     let currentImageId = 'image1'; // 默认选中的图片 ID
 
-    // 禁止长按保存图片
+    // 禁止长按保存
     document.addEventListener('touchstart', function(e) {
         if (e.target.tagName === 'IMG') {
             e.preventDefault(); // 禁用长按事件
