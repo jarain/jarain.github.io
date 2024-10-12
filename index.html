@@ -23,7 +23,7 @@
         /* 美化Tab栏 */
         .tabs {
             display: flex;
-            background: linear-gradient(to right, #4b6cb7, #182848);
+            background: linear-gradient(to right, #df3619, #b57706);
             position: fixed;
             top: 0;
             width: 100%;
@@ -92,7 +92,7 @@
             right: 20px;
             bottom: 20px;
             padding: 12px 24px;
-            background: linear-gradient(to right, #4b6cb7, #182848);
+            background: linear-gradient(to right, #df3619, #b57706);
             color: white;
             border: none;
             border-radius: 30px;
@@ -229,7 +229,6 @@
         const element = document.querySelector(selector);
         if (!element.pinchZoomInstance) {
             element.pinchZoomInstance = new PinchZoom.default(element, {
-                useMouseWheel: true,
                 tapZoomFactor: 4,
                 animationDuration: 300,
                 maxZoom: 10,
@@ -242,6 +241,7 @@
         }
     }
 
+    
     // 页面加载时显示第一个 tab
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelector('.tablinks').click();
