@@ -1,0 +1,285 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+    background-color: #f0f0f0;
+}
+body.blocked {
+    display: none;
+}
+.error-message {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    font-size: 1.5rem;
+}
+body.blocked .error-message {
+    display: block;
+}
+.tab-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.tabs {
+    display: flex;
+    background: linear-gradient(to right, #df3619, #b57706);
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.tabs button {
+    flex: 1;
+    padding: 15px;
+    background-color: transparent;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.3s ease;
+}
+
+.tabs button.active {
+    background-color: rgba(255, 255, 255, 0.2);
+    font-weight: bold;
+}
+
+.tabs button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.content {
+    flex: 1;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: absolute;
+    width: 100%;
+    height: calc(100% - 60px);
+    top: 60px;
+    visibility: hidden;
+    opacity: 0;
+    transition: visibility 0s, opacity 0.5s ease;
+}
+
+.content.active {
+    visibility: visible;
+    opacity: 1;
+}
+
+.pinch-zoom {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.pinch-zoom img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    touch-action: none;
+}
+
+/* 美化下载按钮 */
+#download-btn {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    padding: 12px 24px;
+    background: linear-gradient(to right, #df3619, #b57706);
+    color: white;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 14px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease, background 0.3s ease;
+}
+#view-text-btn {
+    position: fixed;
+    left: 20px;
+    bottom: 20px;
+    padding: 12px 24px;
+    background: linear-gradient(to right, #df3619, #b57706);
+    color: white;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 14px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease, background 0.3s ease;
+}
+
+#download-btn:hover {
+    background: linear-gradient(to right, #6a85b6, #243b55);
+    transform: scale(1.05);
+}
+.popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    margin: 0 auto;
+    align-items: center;
+    z-index: 1000; /* 确保弹窗在最上层 */
+}
+
+.popup-content {
+    background: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    text-align: left;
+    font-size: 0.8rem;
+    width: 85%;
+
+}
+
+.popup-content h2 {
+    margin: 0 0 10px;
+}
+
+.popup-content p {
+    margin: 0 0 10px;
+}
+
+.popup-content button {
+    background-color: #3498db; /* 按钮颜色 */
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.popup-content button:hover {
+    background-color: #2980b9; /* 悬停颜色 */
+}
+
+/* 图片加载动画 */
+#imageLoading {
+    visibility: hidden;
+    opacity: 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    font-size: 24px;
+    letter-spacing: 2px;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+#imageLoading.active {
+    visibility: visible;
+    opacity: 1;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(255, 255, 255, 0.2);
+    border-top: 5px solid #fff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 20px;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* styles.css */
+.notification {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8); /* 添加透明度效果 */
+    color: white;
+    justify-content: center;
+    align-items: center;
+    text-align: left;
+    z-index: 1000;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* 右上角的关闭按钮样式 */
+.notification {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8); /* 添加透明度效果 */
+    color: white;
+    display: flex;
+    justify-content: center; /* 水平居中 */
+    align-items: center;     /* 垂直居中 */
+    z-index: 1000;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.notification-content {
+    width: 100%; /* 容器宽度设置为60% */
+    word-wrap: break-word; /* 自动换行 */
+    text-align: left; /* 文本居中 */
+    margin: 0 auto; /* 确保容器水平居中 */
+    padding: 5%;
+}
+
+.notification p {
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+}
+
+/* 右上角的关闭按钮样式 */
+.notification button {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background-color: transparent;
+    border: none;
+    font-size: 2rem;
+    color: white;
+    cursor: pointer;
+    padding: 0;
+}
+
+.notification button:hover {
+    color: #d32f2f;
+}

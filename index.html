@@ -5,161 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AMAP</title>
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            font-family: Arial, sans-serif;
-            overflow: hidden;
-            background-color: #f0f0f0;
-        }
-
-        .tab-container {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-
-        .tabs {
-            display: flex;
-            background: linear-gradient(to right, #df3619, #b57706);
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 1000;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        .tabs button {
-            flex: 1;
-            padding: 15px;
-            background-color: transparent;
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background 0.3s ease;
-        }
-
-        .tabs button.active {
-            background-color: rgba(255, 255, 255, 0.2);
-            font-weight: bold;
-        }
-
-        .tabs button:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        .content {
-            flex: 1;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            position: absolute;
-            width: 100%;
-            height: calc(100% - 60px);
-            top: 60px;
-            visibility: hidden;
-            opacity: 0;
-            transition: visibility 0s, opacity 0.5s ease;
-        }
-
-        .content.active {
-            visibility: visible;
-            opacity: 1;
-        }
-
-        .pinch-zoom {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .pinch-zoom img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-            touch-action: none;
-        }
-
-        /* 美化下载按钮 */
-        #download-btn {
-            position: fixed;
-            right: 20px;
-            bottom: 20px;
-            padding: 12px 24px;
-            background: linear-gradient(to right, #df3619, #b57706);
-            color: white;
-            border: none;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 14px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-            transition: transform 0.3s ease, background 0.3s ease;
-        }
-
-        #download-btn:hover {
-            background: linear-gradient(to right, #6a85b6, #243b55);
-            transform: scale(1.05);
-        }
-
-        /* 图片加载动画 */
-        #imageLoading {
-            visibility: hidden;
-            opacity: 0;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.6);
-            color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-            font-size: 24px;
-            letter-spacing: 2px;
-            transition: opacity 0.5s ease, visibility 0.5s ease;
-        }
-
-        #imageLoading.active {
-            visibility: visible;
-            opacity: 1;
-        }
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid rgba(255, 255, 255, 0.2);
-            border-top: 5px solid #fff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-right: 20px;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-            100% {
-                transform: rotate(360deg);
-            }
-        }
+       
     </style>
+    <link rel="stylesheet" href="/main.css">
     <script src="https://cdn.jsdelivr.net/npm/pinch-zoom-js@2.3.5/dist/pinch-zoom.umd.js"></script>
 </head>
 <body>
-
+    <div class="error-message">
+        本页面仅支持移动设备访问，请使用手机或其他移动设备访问。
+    </div>
 <div class="tab-container">
     <div class="tabs" id="tabs"></div>
     <div id="contents"></div>
 </div>
 
 <!-- 下载按钮 -->
+<button id="view-text-btn">查看文本</button>
 <button id="download-btn">下载图片</button>
 
 <!-- 图片加载动画 -->
@@ -167,132 +28,15 @@
     <div class="spinner"></div>
     加载中，请稍候...
 </div>
-
-<script>
-    const images = [
-        { name: "康熙二十六年(安平县志)", src: "https://jarain.github.io/kx.jpg", id: "kx" },
-        { name: "光绪二十八年(重绘版)", src: "https://jarain.github.io/gx.jpg", id: "gx" },
-        { name: "民国二十年", src: "https://jarain.github.io/mg.jpg", id: "mg" },
-        { name: "光绪二十八年(原版)", src: "https://jarain.github.io/gx_ori.jpg", id: "gx_ori" }
-    ];
-
-    const tabsContainer = document.getElementById('tabs');
-    const contentsContainer = document.getElementById('contents');
-    let currentImageId = images[0].id; // 默认选中的图片 ID
-    var imageLoading = document.getElementById('imageLoading'); // 获取加载动画容器
-
-    // 动态生成tabs和内容
-    images.forEach((image, index) => {
-        // 创建tab按钮
-        const tabButton = document.createElement('button');
-        tabButton.className = 'tablinks';
-        tabButton.textContent = image.name;
-        tabButton.onclick = (event) => openTab(event, image.id);
-        if (index === 0) {
-            tabButton.classList.add('active');
-        }
-        tabsContainer.appendChild(tabButton);
-
-        // 创建图片容器
-        const contentDiv = document.createElement('div');
-        contentDiv.id = image.id;
-        contentDiv.className = 'content' + (index === 0 ? ' active' : '');
-
-        const pinchZoomDiv = document.createElement('div');
-        pinchZoomDiv.className = 'pinch-zoom';
-
-        const img = document.createElement('img');
-        img.id = `image${index + 1}`;
-        img.src = image.src;
-        img.alt = `Image ${index + 1}`;
-        img.crossOrigin = 'anonymous';
-        img.draggable = 'false';
-        img.oncontextmenu = () => false;
-
-        pinchZoomDiv.appendChild(img);
-        contentDiv.appendChild(pinchZoomDiv);
-        contentsContainer.appendChild(contentDiv);
-    });
-
-    // Tab 切换功能
-    function openTab(evt, tabName) {
-        const contents = document.getElementsByClassName('content');
-        const tabs = document.getElementsByClassName('tablinks');
-
-        for (let i = 0; i < contents.length; i++) {
-            contents[i].classList.remove('active');
-        }
-
-        for (let i = 0; i < tabs.length; i++) {
-            tabs[i].classList.remove('active');
-        }
-
-        document.getElementById(tabName).classList.add('active');
-        evt.currentTarget.classList.add('active');
-
-        // 更新当前选中的图片ID
-        currentImageId = tabName;
-
-        // 显示图片加载动画
-        showImageLoading();
-
-        // 检查图片是否已经加载完成
-        var img = document.getElementById(`image${Array.from(contents).findIndex(c => c.id === tabName) + 1}`);
-        if (img.complete) {
-            hideImageLoading(); // 如果图片已被缓存，立即隐藏加载动画
-        } else {
-            img.onload = function() {
-                hideImageLoading(); // 当图片加载完成时隐藏加载动画
-            };
-            img.onerror = function() {
-                hideImageLoading(); // 如果图片加载失败，也隐藏加载动画
-                alert('图片加载失败，请重试');
-            };
-        }
-
-        // Reinitialize PinchZoom for the active content
-        initPinchZoom(`#${tabName} .pinch-zoom`);
-    }
-
-    // Initialize PinchZoom.js
-    function initPinchZoom(selector) {
-        const element = document.querySelector(selector);
-        if (!element.pinchZoomInstance) {
-            element.pinchZoomInstance = new PinchZoom.default(element, {
-                tapZoomFactor: 4,
-                animationDuration: 300,
-                maxZoom: 10,
-                minZoom: 1,
-                draggableUnzoomed: false,
-                lockDragAxis: false,
-            });
-        }
-    }
-
-    // 显示图片加载动画
-    function showImageLoading() {
-        imageLoading.classList.add('active');
-    }
-
-    // 隐藏图片加载动画
-    function hideImageLoading() {
-        imageLoading.classList.remove('active');
-    }
-
-    // 下载当前选中图片
-    const downloadBtn = document.getElementById('download-btn');
-    downloadBtn.addEventListener('click', () => {
-        const activeImage = document.querySelector(`#${currentImageId} img`);
-        const imageUrl = activeImage.src;
-
-        const link = document.createElement('a');
-        link.href = imageUrl;
-        link.download = `image_${currentImageId}.jpg`;
-        link.click();
-    });
-
-    // 初始化 PinchZoom.js
-    initPinchZoom(`#${currentImageId} .pinch-zoom`);
-</script>
+<div id="splash-notification" class="notification">
+    <div class="notification-content"> <!-- 新增的外层容器 -->
+        <p>本页面免费托管于Github。</p>
+        <p>由于国内网络原因，无法保证稳定访问。</p>
+        <p>如果图片加载特别慢，可以尝试更换网络或换个时段访问。</p>
+        <p>有科学上网能力的请自行启用。</p>
+    </div>
+    <button id="close-btn">&times;</button>
+</div>
+<script src="/main.js"></script>
 </body>
 </html>
